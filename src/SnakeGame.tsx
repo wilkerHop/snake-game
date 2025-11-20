@@ -13,10 +13,12 @@ function SnakeGame() {
   });
   const [score, setScore] = useState(0);
   const [direction, setDirection] = useState<string | null>(null);
+  const [gameOver, setGameOver] = useState(false);
   const gameIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (gameOver) return;
       if (event.key === 'ArrowLeft' && direction !== 'RIGHT')
         setDirection('LEFT');
       if (event.key === 'ArrowUp' && direction !== 'DOWN') setDirection('UP');
@@ -27,29 +29,34 @@ function SnakeGame() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [direction]);
+  }, [direction, gameOver]);
 
   useEffect(() => {
+    if (gameOver) return;
     gameIntervalRef.current = setInterval(draw, 100);
     return () => {
       if (gameIntervalRef.current) {
         clearInterval(gameIntervalRef.current);
       }
     };
-  }, []);
+  }, [snake, direction, gameOver]);
 
   const draw = () => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!ctx) return;
 
-    ctx.fillStyle = 'lightgreen';
+    ctx.fillStyle = '#282c34'; // Match background to hide clear artifacts if any, or just clear
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    
+    // Draw background
+    ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
     for (let i = 0; i < snake.length; i++) {
-      ctx.fillStyle = i === 0 ? 'green' : 'white';
+      ctx.fillStyle = i === 0 ? '#4caf50' : 'white';
       ctx.fillRect(snake[i].x, snake[i].y, box, box);
-      ctx.strokeStyle = 'red';
+      ctx.strokeStyle = '#282c34';
       ctx.strokeRect(snake[i].x, snake[i].y, box, box);
     }
 
@@ -64,6 +71,7 @@ function SnakeGame() {
     if (direction === 'RIGHT') snakeX += box;
     if (direction === 'DOWN') snakeY += box;
 
+    // Collision with food
     if (snakeX === food.x && snakeY === food.y) {
       setScore(score + 1);
       setFood({
@@ -76,6 +84,7 @@ function SnakeGame() {
 
     const newHead = { x: snakeX, y: snakeY };
 
+    // Collision with walls or self
     if (
       snakeX < 0 ||
       snakeX >= canvasWidth ||
@@ -83,9 +92,11 @@ function SnakeGame() {
       snakeY >= canvasHeight ||
       collision(newHead, snake)
     ) {
+      setGameOver(true);
       if (gameIntervalRef.current) {
         clearInterval(gameIntervalRef.current);
       }
+      return;
     }
 
     setSnake([newHead, ...snake]);
@@ -103,14 +114,34 @@ function SnakeGame() {
     return false;
   };
 
+  const resetGame = () => {
+    setSnake([{ x: 9 * box, y: 10 * box }]);
+    setFood({
+      x: Math.floor(Math.random() * 17 + 1) * box,
+      y: Math.floor(Math.random() * 15 + 3) * box,
+    });
+    setScore(0);
+    setDirection(null);
+    setGameOver(false);
+  };
+
   return (
-    <div>
+    <div className="game-container">
+      <div className="score-board">Score: {score}</div>
       <canvas
         ref={canvasRef}
         width={canvasWidth}
         height={canvasHeight}
       ></canvas>
-      <div>Score: {score}</div>
+      {gameOver && (
+        <div className="game-over-overlay">
+          <h2>Game Over</h2>
+          <p>Final Score: {score}</p>
+          <button className="restart-btn" onClick={resetGame}>
+            Restart
+          </button>
+        </div>
+      )}
     </div>
   );
 }
