@@ -19,12 +19,26 @@ function SnakeGame() {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (gameOver) return;
-      if (event.key === 'ArrowLeft' && direction !== 'RIGHT')
+      if (
+        (event.key === 'ArrowLeft' || event.code === 'KeyA') &&
+        direction !== 'RIGHT'
+      )
         setDirection('LEFT');
-      if (event.key === 'ArrowUp' && direction !== 'DOWN') setDirection('UP');
-      if (event.key === 'ArrowRight' && direction !== 'LEFT')
+      if (
+        (event.key === 'ArrowUp' || event.code === 'KeyW') &&
+        direction !== 'DOWN'
+      )
+        setDirection('UP');
+      if (
+        (event.key === 'ArrowRight' || event.code === 'KeyD') &&
+        direction !== 'LEFT'
+      )
         setDirection('RIGHT');
-      if (event.key === 'ArrowDown' && direction !== 'UP') setDirection('DOWN');
+      if (
+        (event.key === 'ArrowDown' || event.code === 'KeyS') &&
+        direction !== 'UP'
+      )
+        setDirection('DOWN');
     };
 
     document.addEventListener('keydown', handleKeyDown);
